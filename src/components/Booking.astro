@@ -17,7 +17,7 @@ const config = {
 };
 ---
 
-<section class="book" id="book" aria-labelledby="book-title">
+<section class="book blend" id="book" aria-labelledby="book-title">
   <!-- Fluted-wall texture and drifting warm light, after the slat wall in the lounge -->
   <div class="book__bg" aria-hidden="true">
     <div class="book__slats"></div>
@@ -157,18 +157,18 @@ const config = {
 
 <style>
   .book {
-    position: relative;
     overflow: hidden;
-    isolation: isolate;
     padding-block: clamp(110px, 13vw, 200px);
-    background: rgba(9, 9, 9, 0.8);
-    border-top: 1px solid var(--line);
+    --blend-bg: rgba(9, 9, 9, 0.8);
   }
   .book__bg {
     position: absolute;
     inset: 0;
     z-index: -1;
+    overflow: hidden;
     pointer-events: none;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 var(--feather-top), #000 calc(100% - var(--feather-bottom)), transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0, #000 var(--feather-top), #000 calc(100% - var(--feather-bottom)), transparent 100%);
   }
   .book__slats {
     position: absolute;

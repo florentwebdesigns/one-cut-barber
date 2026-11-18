@@ -102,7 +102,8 @@ import { bookingLink, directionsLink, telLink } from '../lib/links';
     justify-content: flex-end;
     overflow: hidden;
     isolation: isolate;
-    background: #070707;
+    /* Transparent: the media below feathers out at the bottom into the site backdrop (no hard edge) */
+    background: transparent;
     /* Geometry defaults; JS keeps these in sync with the WebGL composition */
     --fx: 64%;
     --fw: 0px;
@@ -112,6 +113,9 @@ import { bookingLink, directionsLink, telLink } from '../lib/links';
     position: absolute;
     inset: 0;
     z-index: -1;
+    background: #070707;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 70%, rgba(0, 0, 0, 0.6) 84%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 70%, rgba(0, 0, 0, 0.6) 84%, transparent 100%);
   }
 
   /* Ambient layer: the same room, out of focus, filling the screen */
@@ -351,7 +355,22 @@ import { bookingLink, directionsLink, telLink } from '../lib/links';
     left: max(var(--gutter), env(safe-area-inset-left, 0px));
     right: max(var(--gutter), env(safe-area-inset-right, 0px));
     height: 1px;
-    background: linear-gradient(90deg, rgba(241, 238, 232, 0.16), rgba(241, 238, 232, 0.06) 60%, rgba(198, 161, 91, 0.3));
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(241, 238, 232, 0.14) 16%,
+      rgba(198, 161, 91, 0.32) 50%,
+      rgba(241, 238, 232, 0.1) 84%,
+      transparent
+    );
+    transform-origin: 50% 50%;
+    animation: strip-in 2200ms var(--ease) 1400ms both;
+  }
+  @keyframes strip-in {
+    from {
+      transform: scaleX(0);
+      opacity: 0;
+    }
   }
   .hero__loc {
     display: inline-flex;

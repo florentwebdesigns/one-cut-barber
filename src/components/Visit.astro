@@ -5,7 +5,7 @@ import { business } from '../data/business';
 import { telLink, directionsLink, mapsEmbedLink, mapsSearchLink, bookingLink } from '../lib/links';
 ---
 
-<section class="visit section" id="visit" aria-labelledby="visit-title">
+<section class="visit section blend" id="visit" aria-labelledby="visit-title">
   <div class="wrap visit__grid">
     <div class="visit__info">
       <p class="eyebrow" data-reveal>Visit One Cut</p>
@@ -74,8 +74,7 @@ import { telLink, directionsLink, mapsEmbedLink, mapsSearchLink, bookingLink } f
 
 <style>
   .visit {
-    background: linear-gradient(180deg, rgba(9, 9, 9, 0.35), rgba(9, 9, 9, 0.6));
-    border-top: 1px solid var(--line);
+    --blend-bg: linear-gradient(180deg, rgba(9, 9, 9, 0.35), rgba(9, 9, 9, 0.6));
   }
   .visit__grid {
     display: grid;

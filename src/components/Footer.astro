@@ -14,7 +14,7 @@ const links = [
 const year = new Date().getFullYear();
 ---
 
-<footer class="footer">
+<footer class="footer blend">
   <div class="wrap">
     <div class="footer__brand">
       <Logo class="footer__logo" gold />
@@ -56,10 +56,9 @@ const year = new Date().getFullYear();
 
 <style>
   .footer {
-    position: relative;
     padding-block: clamp(80px, 10vw, 140px) calc(32px + env(safe-area-inset-bottom, 0px));
-    background: rgba(6, 6, 6, 0.82);
-    border-top: 1px solid var(--line);
+    --blend-bg: rgba(6, 6, 6, 0.82);
+    --feather-bottom: 0px;
     font-size: 0.92rem;
     color: var(--bone-2);
   }
@@ -67,7 +66,8 @@ const year = new Date().getFullYear();
     display: grid;
     gap: 16px;
     padding-bottom: clamp(48px, 6vw, 80px);
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid transparent;
+    border-image: linear-gradient(90deg, rgba(198, 161, 91, 0.3), rgba(241, 238, 232, 0.1) 45%, transparent) 1;
   }
   .footer__brand :global(.footer__logo) {
     justify-self: start;
@@ -116,7 +116,8 @@ const year = new Date().getFullYear();
     justify-content: space-between;
     gap: 12px;
     padding-top: 28px;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(90deg, transparent, rgba(241, 238, 232, 0.1) 18%, rgba(241, 238, 232, 0.1) 82%, transparent) 1;
     font-size: 0.78rem;
     color: var(--mist-2);
   }

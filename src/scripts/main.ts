@@ -308,6 +308,27 @@ function initLightbox() {
   );
 }
 
+/* ───────── Section joins: open the seam glow as each join scrolls into view ───────── */
+function initSeams() {
+  const seams = document.querySelectorAll<HTMLElement>('.seam');
+  if (reduced || !('IntersectionObserver' in window)) {
+    seams.forEach((el) => el.classList.add('is-in'));
+    return;
+  }
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) {
+          e.target.classList.add('is-in');
+          io.unobserve(e.target);
+        }
+      }
+    },
+    { rootMargin: '0px 0px -12% 0px' },
+  );
+  seams.forEach((el) => io.observe(el));
+}
+
 // Each feature starts on its own, so one failing can never take the others (or the text reveals) down with it.
 const run = (fn: () => void) => {
   try {
@@ -318,4 +339,4 @@ const run = (fn: () => void) => {
 };
 run(initReveal);
 document.documentElement.classList.add('reveal-ready');
-[initNav, initMenu, initScrub, initParallax, initStatus, initMap, initLightbox].forEach(run);
+[initNav, initMenu, initSeams, initScrub, initParallax, initStatus, initMap, initLightbox].forEach(run);

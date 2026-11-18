@@ -7,7 +7,7 @@ const line = 'Walk in as you are. Leave looking like you meant it.';
 const words = line.split(' ');
 ---
 
-<section class="statement section" id="intro" aria-label="About One Cut">
+<section class="statement section blend" id="intro" aria-label="About One Cut">
   <div class="wrap statement__wrap">
     <p class="eyebrow" data-reveal>One Cut Barbershop</p>
     <p class="statement__text display" data-scrub>
@@ -37,7 +37,7 @@ const words = line.split(' ');
 <style>
   .statement {
     padding-block: clamp(96px, 13vw, 200px) clamp(80px, 10vw, 150px);
-    background: radial-gradient(70% 60% at 85% 0%, rgba(198, 161, 91, 0.06), transparent 70%);
+    --blend-bg: radial-gradient(70% 60% at 85% 0%, rgba(198, 161, 91, 0.06), transparent 70%);
   }
   .statement__wrap {
     display: grid;
