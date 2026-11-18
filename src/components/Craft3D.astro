@@ -1,0 +1,451 @@
+---
+/**
+ * "The craft": a live 3D clipper in the One Cut black and gold. The section is tall and its stage is sticky,
+ * so scrolling scrubs the story: the clipper turns in, powers on and throws clippings, the camera moves in on
+ * the blades, the parts separate into an exploded view, then it reassembles. Drag spins it; the pointer tilts it.
+ * The model is built and rendered in the browser (three.js), there is no video or image sequence.
+ */
+import Icon from './Icon.astro';
+import { bookingLink, telLink } from '../lib/links';
+import { business } from '../data/business';
+
+const steps = [
+  {
+    title: 'Precision in',
+    em: 'every pass.',
+    body: 'A good cut comes down to the details: clean lines, an even blend and a finish that holds its shape.',
+  },
+  {
+    title: 'Fades, tapers',
+    em: '& line-ups.',
+    body: 'From a skin fade to a sharp edge-up, every cut is blended by hand until it looks right from every angle.',
+  },
+  {
+    title: 'Detail you',
+    em: 'can feel.',
+    body: 'Necklines, edges and beards are shaped up close, one careful pass at a time.',
+  },
+  {
+    title: 'Every part',
+    em: 'has a job.',
+    body: 'A great cut is a lot of small things done right, from the first pass to the hot towel at the end.',
+  },
+  {
+    title: 'Your chair',
+    em: 'is waiting.',
+    body: 'Text the shop your service and a time that works, or call and we will find you a spot.',
+  },
+];
+---
+
+<section class="craft blend" id="craft" aria-labelledby="craft-title" data-craft>
+  <div class="craft__track">
+    <div class="craft__stage" data-craft-stage>
+      <div class="craft__glow" aria-hidden="true"></div>
+      <div class="craft__floor" aria-hidden="true"></div>
+      <img
+        class="craft__still"
+        src="/media/craft-clipper.webp"
+        alt=""
+        width="1240"
+        height="1520"
+        loading="lazy"
+        decoding="async"
+        aria-hidden="true"
+      />
+      <canvas class="craft__canvas" data-craft-canvas aria-hidden="true"></canvas>
+
+      <div class="wrap craft__ui">
+        <div class="craft__copy">
+          <p class="eyebrow" id="craft-title">The craft</p>
+          <div class="craft__caps">
+            {
+              steps.map((s, i) => (
+                <div class:list={['craft__cap', { 'is-on': i === 0 }]} data-cap={i} aria-hidden={i === 0 ? undefined : 'true'}>
+                  <h3 class="craft__h display">
+                    {s.title} <em class="gold-text">{s.em}</em>
+                  </h3>
+                  <p class="craft__body">{s.body}</p>
+                  {i === steps.length - 1 && (
+                    <div class="craft__ctas">
+                      <a class="btn btn--gold" href={bookingLink()}>
+                        Book by Text <Icon name="arrow" />
+                      </a>
+                      <a class="btn btn--ghost" href={telLink()}>
+                        <Icon name="phone" /> {business.phone.display}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ))
+            }
+          </div>
+
+          <div class="craft__progress" aria-hidden="true">
+            <span class="craft__count tnum"><b data-craft-num>01</b> / 0{steps.length}</span>
+            <span class="craft__bar"><span class="craft__fill" data-craft-fill></span></span>
+          </div>
+        </div>
+      </div>
+
+      <p class="craft__hint" data-craft-hint aria-hidden="true">
+        <span class="craft__hint-ico"></span> Drag to spin
+      </p>
+    </div>
+  </div>
+</section>
+
+<script>
+  const section = document.querySelector<HTMLElement>('[data-craft]');
+  const stage = section?.querySelector<HTMLElement>('[data-craft-stage]');
+  const canvas = section?.querySelector<HTMLCanvasElement>('[data-craft-canvas]');
+
+  if (section && stage && canvas) {
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const caps = [...section.querySelectorAll<HTMLElement>('[data-cap]')];
+    const num = section.querySelector<HTMLElement>('[data-craft-num]');
+    const fill = section.querySelector<HTMLElement>('[data-craft-fill]');
+    const hint = section.querySelector<HTMLElement>('[data-craft-hint]');
+    // Caption n is shown while progress is inside its band
+    const bands = [0, 0.19, 0.36, 0.5, 0.84, 1.01];
+
+    const target = () => {
+      const r = section.getBoundingClientRect();
+      const run = r.height - window.innerHeight;
+      return run > 0 ? Math.min(1, Math.max(0, -r.top / run)) : 0;
+    };
+
+    let progress = target();
+    let shown = -1;
+    const setCaption = (p: number) => {
+      let i = 0;
+      while (i < caps.length - 1 && p >= bands[i + 1]) i++;
+      if (i === shown) return;
+      shown = i;
+      caps.forEach((c, k) => {
+        c.classList.toggle('is-on', k === i);
+        c.classList.toggle('is-past', k < i);
+        if (k === i) c.removeAttribute('aria-hidden');
+        else c.setAttribute('aria-hidden', 'true');
+      });
+      if (num) num.textContent = String(i + 1).padStart(2, '0');
+    };
+    setCaption(progress);
+
+    let render: ((p: number, dt: number, t: number) => void) | null = null;
+    let visible = false;
+    let raf = 0;
+    let last = 0;
+
+    const frame = (now: number) => {
+      raf = 0;
+      if (!visible) return;
+      const dt = Math.min(0.05, (now - (last || now)) / 1000);
+      last = now;
+      const goal = target();
+      progress += (goal - progress) * (1 - Math.exp(-dt * (reduced ? 30 : 7)));
+      if (Math.abs(goal - progress) < 0.0002) progress = goal;
+      setCaption(progress);
+      fill?.style.setProperty('--p', progress.toFixed(4));
+      render?.(progress, dt, now);
+      raf = requestAnimationFrame(frame);
+    };
+    const start = () => {
+      if (!raf) {
+        last = 0;
+        raf = requestAnimationFrame(frame);
+      }
+    };
+
+    let loading = false;
+    const load = () => {
+      if (loading) return;
+      loading = true;
+      import('../scripts/craft-3d')
+        .then(({ createCraft }) => {
+          render = createCraft(canvas, stage, { reduced });
+          section.classList.toggle('craft--gl', !!render);
+          if (!render) section.classList.add('craft--nogl');
+        })
+        .catch(() => section.classList.add('craft--nogl'));
+    };
+
+    // Load the 3D scene a little before it scrolls into view; only animate while it is on screen
+    new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) load();
+      },
+      { rootMargin: '120% 0px 120% 0px' },
+    ).observe(section);
+    new IntersectionObserver((entries) => {
+      visible = entries.some((e) => e.isIntersecting);
+      if (visible) start();
+    }).observe(section);
+
+    canvas.addEventListener('pointerdown', () => hint?.classList.add('is-gone'), { once: true });
+  }
+</script>
+
+<style>
+  .craft {
+    --blend-bg: radial-gradient(60% 55% at 70% 50%, rgba(198, 161, 91, 0.05), transparent 70%),
+      linear-gradient(180deg, rgba(8, 8, 8, 0.55), rgba(8, 8, 8, 0.7));
+  }
+  .craft__track {
+    height: 420vh;
+    position: relative;
+  }
+  .craft__stage {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+  }
+  .craft__glow {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(34% 46% at 70% 48%, rgba(217, 174, 98, 0.16), transparent 70%),
+      radial-gradient(22% 30% at 70% 44%, rgba(255, 226, 170, 0.08), transparent 70%);
+    pointer-events: none;
+  }
+  .craft__floor {
+    position: absolute;
+    left: 50%;
+    right: -10%;
+    bottom: 6%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(198, 161, 91, 0.35) 40%, rgba(198, 161, 91, 0.35) 60%, transparent);
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  /* Still render of the same model: shown while the 3D scene loads and on devices without WebGL */
+  .craft__still {
+    position: absolute;
+    top: 50%;
+    left: 70%;
+    height: min(84%, 760px);
+    width: auto;
+    transform: translate(-50%, -50%);
+    -webkit-mask-image: radial-gradient(closest-side, #000 72%, transparent);
+    mask-image: radial-gradient(closest-side, #000 72%, transparent);
+    pointer-events: none;
+    transition: opacity 900ms var(--ease);
+  }
+  :global(.craft--gl) .craft__still {
+    opacity: 0;
+  }
+  .craft__canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+    touch-action: pan-y;
+    opacity: 0;
+    transition: opacity 1200ms var(--ease);
+  }
+  :global(.craft--gl) .craft__canvas {
+    opacity: 1;
+  }
+  :global(.craft__stage.is-dragging) .craft__canvas {
+    cursor: grabbing;
+  }
+
+  .craft__ui {
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+  }
+  .craft__copy {
+    width: min(100%, 31rem);
+    display: grid;
+    gap: 22px;
+  }
+  .craft__caps {
+    display: grid;
+  }
+  .craft__cap {
+    grid-area: 1 / 1;
+    align-self: start;
+    opacity: 0;
+    transform: translateY(26px);
+    filter: blur(6px);
+    transition:
+      opacity 700ms var(--ease),
+      transform 900ms var(--ease),
+      filter 700ms var(--ease);
+    visibility: hidden;
+  }
+  .craft__cap.is-past {
+    transform: translateY(-22px);
+  }
+  .craft__cap.is-on {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .craft__h {
+    font-size: var(--step-4);
+    letter-spacing: -0.015em;
+    line-height: 1;
+  }
+  .craft__body {
+    margin-top: 20px;
+    font-size: var(--step-1);
+    line-height: 1.6;
+    color: var(--bone-2);
+    max-width: 26em;
+  }
+  .craft__ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 30px;
+  }
+  .craft__progress {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 10px;
+    font-size: var(--step--1);
+    letter-spacing: 0.18em;
+    color: var(--mist, #8d877d);
+  }
+  .craft__count b {
+    color: var(--champagne);
+    font-weight: 600;
+  }
+  .craft__bar {
+    position: relative;
+    flex: 0 0 160px;
+    height: 1px;
+    background: rgba(241, 238, 232, 0.14);
+    overflow: hidden;
+  }
+  .craft__fill {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, var(--gold-deep), var(--champagne));
+    transform-origin: 0 50%;
+    transform: scaleX(var(--p, 0));
+  }
+  .craft__hint {
+    position: absolute;
+    right: max(var(--gutter), 24px);
+    bottom: clamp(22px, 4vh, 40px);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(241, 238, 232, 0.5);
+    pointer-events: none;
+    transition: opacity 600ms var(--ease);
+  }
+  .craft__hint.is-gone,
+  :global(.craft--nogl) .craft__hint {
+    opacity: 0;
+  }
+  .craft__hint-ico {
+    position: relative;
+    width: 34px;
+    height: 1px;
+    background: rgba(241, 238, 232, 0.3);
+  }
+  .craft__hint-ico::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--champagne);
+    animation: craft-hint 2.4s var(--ease-io) infinite;
+  }
+  @keyframes craft-hint {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(27px);
+    }
+  }
+
+  /* Phones and portrait tablets: model on top, copy anchored to the bottom */
+  @media (max-aspect-ratio: 1/1) {
+    .craft__track {
+      height: 380vh;
+    }
+    .craft__glow {
+      background: radial-gradient(60% 34% at 50% 30%, rgba(217, 174, 98, 0.16), transparent 70%);
+    }
+    .craft__floor {
+      display: none;
+    }
+    .craft__still {
+      top: 30%;
+      left: 50%;
+      height: 46%;
+    }
+    .craft__stage::after {
+      content: '';
+      position: absolute;
+      inset: 48% 0 0;
+      background: linear-gradient(180deg, rgba(8, 8, 8, 0), rgba(8, 8, 8, 0.72) 38%, rgba(8, 8, 8, 0.86));
+      pointer-events: none;
+    }
+    .craft__ui {
+      z-index: 1;
+    }
+    .craft__ui {
+      align-items: flex-end;
+      padding-bottom: calc(clamp(84px, 13vh, 120px) + env(safe-area-inset-bottom, 0px));
+    }
+    .craft__copy {
+      width: 100%;
+      gap: 16px;
+    }
+    .craft__h {
+      font-size: clamp(2.1rem, 8.6vw, 3.4rem);
+    }
+    .craft__body {
+      margin-top: 12px;
+      font-size: var(--step-0);
+    }
+    .craft__ctas {
+      margin-top: 20px;
+    }
+    .craft__ctas .btn {
+      --btn-pad-y: 14px;
+      --btn-pad-x: 20px;
+    }
+    .craft__hint {
+      top: 86px;
+      bottom: auto;
+      right: auto;
+      left: max(var(--gutter), 20px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .craft__cap {
+      transition: opacity 300ms linear;
+      transform: none;
+      filter: none;
+    }
+    .craft__hint-ico::after {
+      animation: none;
+    }
+  }
+</style>
