@@ -8,10 +8,13 @@ function initNav() {
   const mbar = document.querySelector<HTMLElement>('[data-mbar]');
   const hero = document.querySelector<HTMLElement>('[data-hero]');
   if (!nav) return;
+  // With the opening intro on the page, the nav stays clear over it and the mobile bar waits for the site
+  const intro = document.querySelector<HTMLElement>('[data-intro]');
   const onScroll = () => {
     const y = window.scrollY;
-    nav.classList.toggle('is-solid', y > 40);
-    if (mbar && hero) mbar.classList.toggle('is-on', y > hero.offsetHeight * 0.75);
+    const start = intro ? intro.offsetHeight - window.innerHeight * 0.2 : 0;
+    nav.classList.toggle('is-solid', y > start + 40);
+    if (mbar && hero) mbar.classList.toggle('is-on', y > start + hero.offsetHeight * 0.75);
   };
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
@@ -102,7 +105,8 @@ function initReveal() {
     { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
   );
   els.forEach((el) => io.observe(el));
-  // Hero copy plays on load
+  // Hero copy plays on load (when the intro is on the page, it plays as the hero scrolls in instead)
+  if (document.querySelector('[data-intro]')) return;
   document.querySelectorAll<HTMLElement>('.hero [data-reveal], .hero [data-split]').forEach((el) => {
     requestAnimationFrame(() => el.classList.add('is-in'));
   });

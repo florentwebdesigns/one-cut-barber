@@ -54,7 +54,9 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
 import logoPath from '../assets/logo-path.txt?raw';
 
-export type CraftRender = (progress: number, dt: number, time: number) => void;
+/** Renders one frame. Returns the blade's horizontal screen position (0 = left edge, 1 = right edge). */
+export type CraftRender = (progress: number, dt: number, time: number) => number;
+export type CraftMode = 'section' | 'intro';
 
 /* ───────────────────────── Body shape ───────────────────────── */
 
@@ -346,9 +348,25 @@ function logoGeometry(width: number, yCenter: number) {
 
 /* ───────────────────────── Story keyframes (scroll progress → pose) ───────────────────────── */
 
-type Pose = { p: number; ry: number; rx: number; rz: number; y: number; s: number; ex: number; pw: number; cz: number; lv: number };
+type Pose = {
+  p: number;
+  ry: number;
+  rx: number;
+  rz: number;
+  x: number;
+  y: number;
+  s: number;
+  ex: number; // exploded view 0..1
+  pw: number; // power 0..1
+  cz: number; // camera distance
+  lv: number; // taper lever
+  fh: number; // hair patch grown 0..1 (intro)
+  cut: number; // blade is cutting the patch (intro)
+};
 const TAU = Math.PI * 2;
-const KEYS: Pose[] = [
+const PI = Math.PI;
+const withDefaults = (k: Partial<Pose>[]): Pose[] => k.map((v) => ({ x: 0, fh: 0, cut: 0, ...v }) as Pose);
+const KEYS_SECTION: Pose[] = withDefaults([
   { p: 0.0, ry: -2.5, rx: 0.5, rz: -0.32, y: -0.3, s: 0.84, ex: 0, pw: 0, cz: 7.7, lv: 0 },
   { p: 0.14, ry: -0.6, rx: 0.16, rz: -0.12, y: 0, s: 1, ex: 0, pw: 0, cz: 7.2, lv: 0 },
   { p: 0.27, ry: 0.4, rx: 0.1, rz: 0.06, y: 0, s: 1, ex: 0, pw: 1, cz: 7.0, lv: 0 },
@@ -358,9 +376,33 @@ const KEYS: Pose[] = [
   { p: 0.78, ry: 3.4, rx: 0.14, rz: 0.04, y: 0.05, s: 0.94, ex: 1, pw: 0, cz: 7.9, lv: 0 },
   { p: 0.92, ry: TAU + 0.36, rx: 0.12, rz: -0.06, y: 0, s: 1, ex: 0, pw: 0.55, cz: 7.2, lv: 0 },
   { p: 1.0, ry: TAU + 0.46, rx: 0.12, rz: -0.06, y: 0, s: 1, ex: 0, pw: 0.55, cz: 7.2, lv: 0 },
-];
+]);
+
+/**
+ * Opening intro: the same story as the section, with a haircut in the middle and a brand reveal at the end.
+ * Turn in → power on → flip over and cut a fade into a patch of hair → close-up on the blades → exploded
+ * view → reassemble → one last pass across the screen that reveals the One Cut wordmark.
+ */
+const CUT_Y = -0.75; // base of the hair patch (root space)
+const KEYS_INTRO: Pose[] = withDefaults([
+  { p: 0.0, ry: -2.5, rx: 0.5, rz: -0.32, y: 0.22, s: 0.9, ex: 0, pw: 0, cz: 7.4, lv: 0 },
+  { p: 0.1, ry: -0.6, rx: 0.16, rz: -0.12, y: 0.06, s: 0.96, ex: 0, pw: 0, cz: 7.0, lv: 0 },
+  { p: 0.18, ry: 0.4, rx: 0.1, rz: 0.06, y: 0.1, s: 0.94, ex: 0, pw: 1, cz: 7.0, lv: 0 },
+  { p: 0.245, x: -1.32, ry: 0.12, rx: 0.36, rz: PI - 0.26, y: 0.86, s: 0.8, ex: 0, pw: 1, cz: 7.5, lv: 0, fh: 1 },
+  { p: 0.275, x: -1.24, ry: 0.1, rx: 0.36, rz: PI - 0.26, y: 0.37, s: 0.8, ex: 0, pw: 1, cz: 7.5, lv: 0, fh: 1, cut: 1 },
+  { p: 0.47, x: 1.28, ry: -0.08, rx: 0.36, rz: PI - 0.22, y: 0.27, s: 0.8, ex: 0, pw: 1, cz: 7.5, lv: 0, fh: 1, cut: 1 },
+  { p: 0.515, x: 0.7, ry: -0.1, rx: 0.3, rz: PI + 0.2, y: 0.95, s: 0.86, ex: 0, pw: 1, cz: 7.4, lv: 0, fh: 1 },
+  { p: 0.585, x: 0, ry: 0.12, rx: 0.98, rz: TAU, y: -0.5, s: 1.28, ex: 0, pw: 1, cz: 6.0, lv: 1, fh: 0 },
+  { p: 0.65, ry: 0.85, rx: 0.3, rz: TAU + 0.1, y: 0.05, s: 1.02, ex: 0, pw: 0, cz: 7.2, lv: 0 },
+  { p: 0.73, ry: 2.25, rx: 0.2, rz: TAU + 0.14, y: 0.08, s: 0.96, ex: 1, pw: 0, cz: 7.9, lv: 0 },
+  { p: 0.79, ry: 3.4, rx: 0.14, rz: TAU + 0.04, y: 0.08, s: 0.96, ex: 1, pw: 0, cz: 7.9, lv: 0 },
+  { p: 0.86, ry: TAU + 0.36, rx: 0.12, rz: TAU - 0.06, y: 0.08, s: 1.05, ex: 0, pw: 0.55, cz: 7.2, lv: 0 },
+  { p: 0.9, x: -4.6, ry: TAU + 0.2, rx: 0.2, rz: TAU - PI / 2, y: 0.04, s: 0.78, ex: 0, pw: 0.8, cz: 7.2, lv: 0 },
+  { p: 0.975, x: 4.8, ry: TAU + 0.2, rx: 0.2, rz: TAU - PI / 2, y: 0.04, s: 0.78, ex: 0, pw: 0.8, cz: 7.2, lv: 0 },
+  { p: 1.0, x: 4.8, ry: TAU + 0.2, rx: 0.2, rz: TAU - PI / 2, y: 0.04, s: 0.78, ex: 0, pw: 0, cz: 7.2, lv: 0 },
+]);
 const ease = (t: number) => t * t * (3 - 2 * t);
-function poseAt(p: number): Pose {
+function poseAt(KEYS: Pose[], p: number): Pose {
   let i = 0;
   while (i < KEYS.length - 2 && p > KEYS[i + 1].p) i++;
   const a = KEYS[i];
@@ -373,7 +415,13 @@ function poseAt(p: number): Pose {
 
 /* ───────────────────────── Scene ───────────────────────── */
 
-export function createCraft(canvas: HTMLCanvasElement, stage: HTMLElement, opts: { reduced: boolean }): CraftRender | null {
+export function createCraft(
+  canvas: HTMLCanvasElement,
+  stage: HTMLElement,
+  opts: { reduced: boolean; mode?: CraftMode },
+): CraftRender | null {
+  const intro = opts.mode === 'intro';
+  const KEYS = intro ? KEYS_INTRO : KEYS_SECTION;
   let renderer: WebGLRenderer;
   try {
     renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
@@ -565,10 +613,10 @@ export function createCraft(canvas: HTMLCanvasElement, stage: HTMLElement, opts:
   );
   shadow.rotation.x = -Math.PI / 2;
   shadow.position.y = -1.78;
-  root.add(shadow);
+  if (!intro) root.add(shadow);
 
   // Hair clippings (world space)
-  const HAIR = coarse ? 110 : 180;
+  const HAIR = intro ? (coarse ? 220 : 380) : coarse ? 110 : 180;
   const hairGeo = new CylinderGeometry(1, 0.7, 1, 5, 1);
   const hairs = new InstancedMesh(hairGeo, new MeshPhysicalMaterial({ color: 0x2b1f15, roughness: 0.38, metalness: 0, sheen: 1, sheenColor: new Color(0x8a6a48), sheenRoughness: 0.4 }), HAIR);
   hairs.instanceMatrix.setUsage(DynamicDrawUsage);
@@ -591,6 +639,84 @@ export function createCraft(canvas: HTMLCanvasElement, stage: HTMLElement, opts:
   const tipL = new Vector3();
   const tipR = new Vector3();
   const bladeN = new Vector3();
+  const spawn = (pos: Vector3, vel: Vector3, len: number, life: number) => {
+    const i = nextHair;
+    nextHair = (nextHair + 1) % HAIR;
+    hp[i * 3] = pos.x;
+    hp[i * 3 + 1] = pos.y;
+    hp[i * 3 + 2] = pos.z;
+    hv[i * 3] = vel.x;
+    hv[i * 3 + 1] = vel.y;
+    hv[i * 3 + 2] = vel.z;
+    hr[i * 3] = Math.random() * TAU;
+    hr[i * 3 + 1] = Math.random() * TAU;
+    hr[i * 3 + 2] = Math.random() * TAU;
+    hw[i * 3] = (Math.random() - 0.5) * 9;
+    hw[i * 3 + 1] = (Math.random() - 0.5) * 9;
+    hw[i * 3 + 2] = (Math.random() - 0.5) * 9;
+    hlen[i] = len;
+    hl[i] = life;
+  };
+
+  /* Intro only: a patch of hair, gently domed like the back of a head, that the clipper cuts into a fade */
+  const FN = intro ? (coarse ? 1100 : 2600) : 0;
+  const FW = 1.6;
+  const fx = new Float32Array(FN);
+  const fz = new Float32Array(FN);
+  const fby = new Float32Array(FN);
+  const fL = new Float32Array(FN);
+  const fCut = new Float32Array(FN);
+  const fLeanX = new Float32Array(FN);
+  const fLeanZ = new Float32Array(FN);
+  const fPh = new Float32Array(FN);
+  let field: InstancedMesh | null = null;
+  if (intro) {
+    const strandGeo = new CylinderGeometry(0.55, 1, 1, 5, 4);
+    strandGeo.translate(0, 0.5, 0);
+    // slight natural curve along each strand
+    const sp = strandGeo.getAttribute('position') as BufferAttribute;
+    for (let i = 0; i < sp.count; i++) {
+      const y = sp.getY(i);
+      sp.setX(i, sp.getX(i) + y * y * 1.6);
+    }
+    strandGeo.computeVertexNormals();
+    field = new InstancedMesh(
+      strandGeo,
+      new MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0, sheen: 0.6, sheenColor: new Color(0x6b4f33), sheenRoughness: 0.45, envMapIntensity: 0.35 }),
+      FN,
+    );
+    field.instanceMatrix.setUsage(DynamicDrawUsage);
+    field.frustumCulled = false;
+    const c = new Color();
+    for (let i = 0; i < FN; i++) {
+      const x = (Math.random() * 2 - 1) * FW;
+      const z = (Math.random() * 2 - 1) * 0.42;
+      fx[i] = x;
+      fz[i] = z;
+      fby[i] = CUT_Y - 0.1 * (x / FW) ** 2 - 0.12 * z * z;
+      const edge = MathUtils.smoothstep(FW - Math.abs(x), 0, 0.35) * MathUtils.smoothstep(0.42 - Math.abs(z), 0, 0.12);
+      fL[i] = (0.46 + Math.random() * 0.14) * (0.35 + 0.65 * edge);
+      fCut[i] = fL[i];
+      fLeanX[i] = (Math.random() - 0.5) * 0.5 - 0.12;
+      fLeanZ[i] = (Math.random() - 0.5) * 0.5;
+      fPh[i] = Math.random() * TAU;
+      const shade = 0.018 + Math.random() * 0.035;
+      c.setRGB(shade * 1.3, shade * 0.95, shade * 0.7);
+      field.setColorAt(i, c);
+    }
+    root.add(field);
+    // warm backlight that silhouettes the strands against the dark stage
+    const back = new DirectionalLight(0xffcf8a, 1.3);
+    back.position.set(0.5, 1.2, -4);
+    scene.add(back);
+  }
+  const tipLr = new Vector3();
+  const tipRr = new Vector3();
+  const tmpV = new Vector3();
+  const tmpV2 = new Vector3();
+  const tmpS = new Vector3();
+  const tmpE = new Object3D();
+  const projV = new Vector3();
 
   // Exploded-view offsets (model space) for each part
   const explode: [Object3D, Vector3, number][] = [
@@ -659,12 +785,18 @@ export function createCraft(canvas: HTMLCanvasElement, stage: HTMLElement, opts:
   let power01 = 0;
 
   return (p, dt, time) => {
-    const pose = poseAt(p);
+    const pose = poseAt(KEYS, p);
     const t = time / 1000;
     const still = opts.reduced;
 
     // Layout: model to the right of the copy on wide screens, above it on tall ones
-    if (aspect >= 1) {
+    if (intro) {
+      // Centred stage; the hair patch and the final pass need the full width, so phones scale everything down
+      const halfW = 7.2 * Math.tan(MathUtils.degToRad(14)) * aspect;
+      const sc = Math.min(1.06, (halfW * 0.95) / FW);
+      root.position.set(0, aspect < 1 ? 0.22 : 0.06, 0);
+      root.scale.setScalar(sc);
+    } else if (aspect >= 1) {
       const vis = 2 * 7.2 * Math.tan(MathUtils.degToRad(14)) * aspect;
       root.position.set(Math.min(vis * 0.22, 1.55), 0.02, 0);
       root.scale.setScalar(aspect < 1.3 ? 0.86 : 1);
@@ -673,9 +805,10 @@ export function createCraft(canvas: HTMLCanvasElement, stage: HTMLElement, opts:
       root.position.set(0, 0.68, 0);
       root.scale.setScalar(MathUtils.clamp(aspect * 1.05, 0.5, 0.6));
     }
-    const portrait = aspect < 1;
+    const portrait = aspect < 1 && !intro;
     camera.position.z = portrait ? 7.2 + (pose.cz - 7.2) * 0.45 : pose.cz;
-    if (portrait) camera.lookAt(0, 0.1, 0);
+    if (intro) camera.lookAt(0, 0.08, 0);
+    else if (portrait) camera.lookAt(0, 0.1, 0);
     else camera.lookAt(root.position.x * 0.35, 0.1 + root.position.y * 0.35, 0);
 
     // Interaction
@@ -692,9 +825,11 @@ export function createCraft(canvas: HTMLCanvasElement, stage: HTMLElement, opts:
     const float = still ? 0 : Math.sin(t * 0.9) * 0.035;
     const drift = still ? 0 : Math.sin(t * 0.33) * 0.06;
     model.rotation.set(pose.rx + tilt.y * 0.14, pose.ry + drift + spin + tilt.x * 0.32, pose.rz, 'YXZ');
-    const damp = aspect < 1 ? 0.45 : 1;
+    const damp = aspect < 1 && !intro ? 0.45 : 1;
     model.position.y = pose.y * damp + float;
-    model.scale.setScalar(1 + (pose.s - 1) * damp);
+    // phones: the intro clipper is shown larger whenever it is not working on the hair patch
+    const boost = intro && aspect < 1 ? 1 + 0.5 * (1 - pose.fh) : 1;
+    model.scale.setScalar((1 + (pose.s - 1) * damp) * boost);
 
     // Key light sweeps across the metal as the story moves
     const la = -0.6 + p * Math.PI * 1.4;
@@ -716,12 +851,11 @@ export function createCraft(canvas: HTMLCanvasElement, stage: HTMLElement, opts:
     (glow.material as SpriteMaterial).opacity = power01 * 0.6;
     const vib = on && !still ? power01 : 0;
     cutter.position.x = (basePos.get(cutter)!.x || 0) + Math.sin(t * 190) * 0.007 * vib;
+    model.position.x = pose.x;
+    model.position.z = 0;
     if (vib) {
-      model.position.x = Math.sin(t * 157) * 0.0016 * vib;
-      model.position.z = Math.cos(t * 173) * 0.0012 * vib;
-    } else {
-      model.position.x = 0;
-      model.position.z = 0;
+      model.position.x += Math.sin(t * 157) * 0.0016 * vib;
+      model.position.z += Math.cos(t * 173) * 0.0012 * vib;
     }
 
     // Clippings
@@ -729,7 +863,8 @@ export function createCraft(canvas: HTMLCanvasElement, stage: HTMLElement, opts:
     blades.localToWorld(tipL.set(-0.38, 0.235, 0.03));
     blades.localToWorld(tipR.set(0.38, 0.235, 0.03));
     bladeN.set(0, 1, 0.3).transformDirection(blades.matrixWorld);
-    const spray = vib * MathUtils.smoothstep(power01, 0.82, 1);
+    // in the intro the free spray stops while the blade is in the hair (the cut makes its own clippings)
+    const spray = vib * MathUtils.smoothstep(power01, 0.82, 1) * (intro ? 1 - MathUtils.smoothstep(pose.fh, 0.2, 0.9) : 1);
     if (spray > 0.05) {
       spawnAcc += dt * 75 * spray;
       while (spawnAcc > 1) {
@@ -750,9 +885,52 @@ export function createCraft(canvas: HTMLCanvasElement, stage: HTMLElement, opts:
         hw[i * 3] = (Math.random() - 0.5) * 9;
         hw[i * 3 + 1] = (Math.random() - 0.5) * 9;
         hw[i * 3 + 2] = (Math.random() - 0.5) * 9;
+        hlen[i] = 0.035 + Math.random() * 0.09;
         hl[i] = 2.1;
       }
     }
+    if (field) {
+      // regrow when scrolled back before the cut
+      const before = p < 0.255;
+      root.worldToLocal(tipLr.copy(tipL));
+      root.worldToLocal(tipRr.copy(tipR));
+      const x0 = Math.min(tipLr.x, tipRr.x) - 0.03;
+      const x1 = Math.max(tipLr.x, tipRr.x) + 0.03;
+      const cutting = pose.cut > 0.5 && !before;
+      const bx = (tipLr.x + tipRr.x) / 2;
+      let spawned = 0;
+      for (let i = 0; i < FN; i++) {
+        if (before) fCut[i] += (fL[i] - fCut[i]) * (1 - Math.exp(-dt * 6));
+        else if (cutting && fx[i] >= x0 && fx[i] <= x1) {
+          const k = (fx[i] - tipLr.x) / (tipRr.x - tipLr.x || 1);
+          const yb = tipLr.y + (tipRr.y - tipLr.y) * MathUtils.clamp(k, 0, 1);
+          const allowed = Math.max(0.035, yb - fby[i]);
+          if (allowed < fCut[i] - 0.01) {
+            const lost = fCut[i] - allowed;
+            if (spawned < (coarse ? 6 : 12) && Math.random() < 0.55) {
+              spawned++;
+              tmpV.set(fx[i], fby[i] + fCut[i] - lost * 0.5, fz[i]);
+              root.localToWorld(tmpV);
+              tmpV2.set((Math.random() - 0.5) * 0.7 - 0.25, 0.4 + Math.random() * 0.9, 0.2 + Math.random() * 0.6);
+              spawn(tmpV, tmpV2, MathUtils.clamp(lost * 0.6, 0.03, 0.14), 1.8 + Math.random() * 0.6);
+            }
+            fCut[i] = allowed;
+          }
+        }
+        const grow = ease(MathUtils.clamp(pose.fh * 1.25 - (Math.abs(fx[i]) / FW) * 0.25, 0, 1));
+        const len = Math.min(fL[i] * grow, fCut[i]);
+        // sway, plus strands bend away from the moving blade
+        const near = cutting ? Math.exp(-(((fx[i] - bx) / 0.25) ** 2)) : 0;
+        const sway = still ? 0 : Math.sin(t * 1.3 + fPh[i] + fx[i] * 2) * 0.05;
+        tmpE.rotation.set(fLeanZ[i] + sway * 0.5, 0, fLeanX[i] + sway - near * 0.5 * Math.sign(fx[i] - bx || 1));
+        q.setFromEuler(tmpE.rotation);
+        const r = 0.0072 * (0.6 + 0.4 * Math.min(1, len / 0.3));
+        m4.compose(tmpV.set(fx[i], fby[i], fz[i]), q, tmpS.set(len > 0.004 ? r : 0, Math.max(len, 0.0001), r));
+        field.setMatrixAt(i, m4);
+      }
+      field.instanceMatrix.needsUpdate = true;
+    }
+
     const sx = root.scale.x;
     for (let i = 0; i < HAIR; i++) {
       if (hl[i] <= 0) continue;
@@ -781,5 +959,7 @@ export function createCraft(canvas: HTMLCanvasElement, stage: HTMLElement, opts:
     hairs.instanceMatrix.needsUpdate = true;
 
     renderer.render(scene, camera);
+    projV.copy(tipL).add(tipR).multiplyScalar(0.5).project(camera);
+    return projV.x * 0.5 + 0.5;
   };
 }
