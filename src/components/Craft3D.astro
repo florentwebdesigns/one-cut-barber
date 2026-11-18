@@ -236,6 +236,12 @@ const steps = [
   :global(.craft--gl) .craft__still {
     opacity: 0;
   }
+  /* Fade the stage's light and render out at the top and bottom edges so it melts into the sections around it */
+  .craft__glow,
+  .craft__canvas {
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 8%, #000 86%, transparent);
+    mask-image: linear-gradient(180deg, transparent, #000 8%, #000 86%, transparent);
+  }
   .craft__canvas {
     position: absolute;
     inset: 0;
@@ -402,7 +408,7 @@ const steps = [
       content: '';
       position: absolute;
       inset: 48% 0 0;
-      background: linear-gradient(180deg, rgba(8, 8, 8, 0), rgba(8, 8, 8, 0.72) 38%, rgba(8, 8, 8, 0.86));
+      background: linear-gradient(180deg, rgba(8, 8, 8, 0), rgba(8, 8, 8, 0.72) 34%, rgba(8, 8, 8, 0.8) 74%, rgba(8, 8, 8, 0));
       pointer-events: none;
     }
     .craft__ui {
