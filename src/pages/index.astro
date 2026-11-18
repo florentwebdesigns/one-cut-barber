@@ -1,0 +1,37 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import Statement from '../components/Statement.astro';
+import About from '../components/About.astro';
+import Services from '../components/Services.astro';
+import Gallery from '../components/Gallery.astro';
+import Booking from '../components/Booking.astro';
+import Backdrop from '../components/Backdrop.astro';
+import Visit from '../components/Visit.astro';
+import Footer from '../components/Footer.astro';
+import MobileBar from '../components/MobileBar.astro';
+
+const title = 'One Cut Barbershop · Springfield, NJ · Fades, Beards & Hot Towel';
+const description =
+  'One Cut Barbershop at 223 Mountain Avenue, Springfield, NJ. Haircuts, fades, beard work and hot-towel finishes. Walk-ins welcome. Call (908) 363-0066 to book.';
+---
+
+<Base title={title} description={description}>
+  <Backdrop />
+  <Nav />
+  <main id="main">
+    <Hero />
+    <Statement />
+    <About />
+    <Services />
+    <Gallery />
+    <Booking />
+    <Visit />
+  </main>
+  <Footer />
+  <MobileBar />
+  <script>
+    import '../scripts/main';
+  </script>
+</Base>

@@ -1,0 +1,76 @@
+---
+import Icon from './Icon.astro';
+import { telLink, directionsLink, bookingLink } from '../lib/links';
+---
+
+<nav class="mbar" aria-label="Quick actions" data-mbar>
+  <a href={telLink()} class="mbar__item">
+    <Icon name="phone" />
+    <span>Call</span>
+  </a>
+  <a href={directionsLink()} target="_blank" rel="noopener" class="mbar__item">
+    <Icon name="pin" />
+    <span>Directions</span>
+  </a>
+  <a href={bookingLink()} class="mbar__item mbar__item--book">
+    <Icon name="message" />
+    <span>Book by Text</span>
+  </a>
+</nav>
+
+<style>
+  .mbar {
+    display: none;
+  }
+  @media (max-width: 760px) {
+    .mbar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 50;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.5fr;
+      gap: 8px;
+      padding: 10px max(12px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px))
+        max(12px, env(safe-area-inset-left, 0px));
+      background: rgba(12, 12, 11, 0.86);
+      -webkit-backdrop-filter: blur(18px) saturate(1.2);
+      backdrop-filter: blur(18px) saturate(1.2);
+      border-top: 1px solid var(--line);
+      transform: translateY(110%);
+      transition: transform 700ms var(--ease);
+    }
+    .mbar.is-on {
+      transform: none;
+    }
+    .mbar__item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      border: 1px solid rgba(241, 238, 232, 0.16);
+      border-radius: 1px;
+      color: var(--bone);
+    }
+    .mbar__item :global(svg) {
+      width: 16px;
+      height: 16px;
+      color: var(--gold);
+    }
+    .mbar__item--book {
+      border: 0;
+      color: #17130b;
+      background: var(--gold-metal);
+      background-size: 180% 100%;
+    }
+    .mbar__item--book :global(svg) {
+      color: #17130b;
+    }
+  }
+</style>

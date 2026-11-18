@@ -1,0 +1,273 @@
+---
+import Icon from './Icon.astro';
+import Hours from './Hours.astro';
+import { business } from '../data/business';
+import { telLink, directionsLink, mapsEmbedLink, mapsSearchLink, bookingLink } from '../lib/links';
+---
+
+<section class="visit section" id="visit" aria-labelledby="visit-title">
+  <div class="wrap visit__grid">
+    <div class="visit__info">
+      <p class="eyebrow" data-reveal>Visit One Cut</p>
+      <h2 id="visit-title" class="visit__title display" data-split>
+        <span class="split-line"><span>Find us on</span></span>
+        <span class="split-line" style="--i:1"><span><em class="gold-text">Mountain Ave.</em></span></span>
+      </h2>
+
+      <div class="visit__status" data-status data-reveal>
+        <span class="visit__dot" aria-hidden="true"></span>
+        <span class="visit__status-label" data-status-label>Hours below</span>
+        <span class="visit__status-detail" data-status-detail></span>
+      </div>
+
+      <div class="visit__cols">
+        <div class="visit__block" data-reveal style="--d:100">
+          <p class="visit__k">Address</p>
+          <address>
+            <a href={directionsLink()} target="_blank" rel="noopener">
+              {business.address.street}<br />
+              {business.address.city}, {business.address.region}
+              {business.address.postalCode}
+            </a>
+          </address>
+        </div>
+        <div class="visit__block" data-reveal style="--d:180">
+          <p class="visit__k">Phone</p>
+          <a class="tnum visit__phone" href={telLink()}>{business.phone.display}</a>
+          <p class="visit__small">Walk-ins welcome · Free parking</p>
+        </div>
+      </div>
+
+      <div class="visit__ctas" data-reveal style="--d:260">
+        <a class="btn btn--gold" href={directionsLink()} target="_blank" rel="noopener">
+          <Icon name="pin" />
+          Get Directions
+        </a>
+        <a class="btn btn--ghost" href={bookingLink()}>
+          <Icon name="message" />
+          Book by Text
+        </a>
+      </div>
+    </div>
+
+    <div class="visit__side">
+      <div class="visit__map" data-map data-src={mapsEmbedLink()} data-reveal="clip">
+        <div class="visit__map-facade">
+          <div class="visit__map-grid" aria-hidden="true"></div>
+          <div class="visit__pin" aria-hidden="true"><Icon name="pin" /></div>
+          <p class="visit__map-addr display">{business.address.streetShort}</p>
+          <div class="visit__map-actions">
+            <button type="button" class="link-line" data-map-load>Show map</button>
+            <a class="link-line" href={mapsSearchLink()} target="_blank" rel="noopener">Open in Google Maps</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="visit__hours" data-reveal>
+        <p class="visit__k">Hours</p>
+        <Hours />
+        <p class="visit__small">Times shown in Eastern Time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .visit {
+    background: linear-gradient(180deg, rgba(9, 9, 9, 0.35), rgba(9, 9, 9, 0.6));
+    border-top: 1px solid var(--line);
+  }
+  .visit__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(48px, 7vw, 120px);
+    align-items: start;
+  }
+  .visit__info {
+    display: grid;
+    gap: 30px;
+    justify-items: start;
+  }
+  .visit__title {
+    font-size: var(--step-4);
+    line-height: 0.95;
+  }
+  .visit__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+  .visit__status-detail {
+    color: var(--mist);
+    font-weight: 500;
+  }
+  .visit__status-detail:not(:empty)::before {
+    content: '·';
+    margin-right: 10px;
+  }
+  .visit__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--mist-2);
+  }
+  :global(.visit__status.is-open) .visit__dot {
+    background: #9fc39a;
+    box-shadow: 0 0 12px rgba(159, 195, 154, 0.6);
+  }
+  .visit__cols {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    padding-block: 28px;
+    border-block: 1px solid var(--line);
+  }
+  .visit__k {
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+  .visit__block address {
+    font-style: normal;
+    font-size: 1.05rem;
+    line-height: 1.5;
+  }
+  .visit__block a {
+    transition: color var(--t-sm) var(--ease);
+  }
+  .visit__block a:hover {
+    color: var(--champagne);
+  }
+  .visit__phone {
+    font-family: var(--font-display);
+    font-size: var(--step-2);
+    line-height: 1.1;
+  }
+  .visit__small {
+    margin-top: 8px;
+    font-size: 0.82rem;
+    color: var(--mist);
+  }
+  .visit__ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .visit__side {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: clamp(24px, 3vw, 40px);
+    align-items: start;
+  }
+  .visit__map {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: #121211;
+    border: 1px solid var(--line);
+  }
+  .visit__map :global(iframe) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    filter: grayscale(1) invert(0.92) contrast(0.85) brightness(0.95) sepia(0.18);
+  }
+  .visit__map-facade {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 18px;
+    padding: 24px;
+    text-align: center;
+  }
+  .visit__map-grid {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(115deg, transparent 47%, rgba(198, 161, 91, 0.22) 47.4%, rgba(198, 161, 91, 0.22) 48%, transparent 48.4%),
+      linear-gradient(20deg, transparent 60%, rgba(241, 238, 232, 0.07) 60.3%, rgba(241, 238, 232, 0.07) 60.9%, transparent 61.2%),
+      linear-gradient(160deg, transparent 30%, rgba(241, 238, 232, 0.05) 30.3%, rgba(241, 238, 232, 0.05) 30.8%, transparent 31.1%),
+      repeating-linear-gradient(0deg, rgba(241, 238, 232, 0.035) 0 1px, transparent 1px 44px),
+      repeating-linear-gradient(90deg, rgba(241, 238, 232, 0.035) 0 1px, transparent 1px 44px);
+    -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 30%, transparent 80%);
+    mask-image: radial-gradient(circle at 50% 45%, #000 30%, transparent 80%);
+  }
+  .visit__pin {
+    position: relative;
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: #17130b;
+    background: var(--gold-metal);
+    box-shadow: 0 0 0 10px rgba(198, 161, 91, 0.12), 0 0 0 22px rgba(198, 161, 91, 0.05);
+  }
+  .visit__pin :global(svg) {
+    width: 24px;
+    height: 24px;
+  }
+  .visit__map-addr {
+    position: relative;
+    font-size: var(--step-2);
+  }
+  .visit__map-actions {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 22px;
+  }
+  .visit__map.is-loaded .visit__map-facade {
+    display: none;
+  }
+  .visit__hours {
+    padding-top: 4px;
+  }
+
+  @media (max-width: 1180px) {
+    .visit__side {
+      grid-template-columns: 1fr;
+    }
+    .visit__map {
+      aspect-ratio: 16 / 10;
+    }
+  }
+  @media (max-width: 900px) {
+    .visit__grid {
+      grid-template-columns: 1fr;
+    }
+    .visit__side {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 560px) {
+    .visit__cols {
+      grid-template-columns: 1fr;
+      gap: 22px;
+    }
+    .visit__map {
+      aspect-ratio: 4 / 4;
+    }
+    .visit__ctas {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      width: 100%;
+    }
+    .visit__ctas .btn {
+      --btn-pad-x: 12px;
+    }
+  }
+</style>

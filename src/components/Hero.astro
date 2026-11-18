@@ -1,0 +1,472 @@
+---
+import Icon from './Icon.astro';
+import { business } from '../data/business';
+import { bookingLink, directionsLink, telLink } from '../lib/links';
+---
+
+<section class="hero" id="top" aria-labelledby="hero-title" data-hero>
+  <!-- Live cinematic background: authentic footage of the One Cut lounge,
+       composited and graded in WebGL. CSS composition below is the fallback
+       (no WebGL, reduced motion, save-data) and the first paint. -->
+  <div class="hero__media" aria-hidden="true">
+    <div class="hero__ambient">
+      <img src="/media/hero-poster.jpg" alt="" width="816" height="1424" decoding="async" />
+    </div>
+    <div class="hero__frame" data-hero-frame>
+      <img
+        class="hero__poster"
+        src="/media/hero-poster.jpg"
+        alt=""
+        width="816"
+        height="1424"
+        fetchpriority="high"
+        decoding="async"
+      />
+      <video
+        class="hero__video"
+        data-hero-video
+        muted
+        loop
+        playsinline
+        preload="auto"
+        disablepictureinpicture
+        disableremoteplayback
+        poster="/media/hero-poster.jpg"
+        width="816"
+        height="1424"
+      >
+        <source src="/media/hero.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <canvas class="hero__gl" data-hero-gl></canvas>
+    <div class="hero__shade"></div>
+    <div class="hero__grain grain"></div>
+  </div>
+
+  <div class="hero__content wrap">
+    <div class="hero__copy">
+      <p class="hero__status" data-status data-reveal style="--d:200">
+        <span class="hero__dot" aria-hidden="true"></span>
+        <span data-status-label>Open daily except Sunday</span>
+        <span class="hero__status-detail" data-status-detail></span>
+      </p>
+      <p class="eyebrow" data-reveal style="--d:300">Barbershop · Springfield, NJ</p>
+      <h1 id="hero-title" class="hero__title display" data-split data-reveal-split style="--d:420">
+        <span class="sr-only">One Cut Barbershop. </span>
+        <span class="split-line"><span>Every line,</span></span>
+        <span class="split-line"><span><em class="gold-text">intentional.</em></span></span>
+      </h1>
+      <p class="hero__lede" data-reveal style="--d:900">
+        Fades, beard work and hot-towel finishes on Mountain Avenue in Springfield, New Jersey. Walk in, or call
+        ahead for your chair.
+      </p>
+      <div class="hero__ctas" data-reveal style="--d:1050">
+        <a class="btn btn--gold" href={bookingLink()}>
+          <Icon name="message" />
+          Book by Text
+        </a>
+        <a class="btn btn--ghost" href={telLink()}>
+          <Icon name="phone" />
+          Call to Book
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero__strip wrap" data-reveal style="--d:1300">
+    <a class="hero__loc" href={directionsLink()} target="_blank" rel="noopener">
+      <Icon name="pin" />
+      <span>{business.address.streetShort} · {business.address.city}, {business.address.region}</span>
+    </a>
+    <a class="hero__scroll" href="#intro" aria-label="Scroll to content">
+      <span class="hero__scroll-line" aria-hidden="true"></span>
+      <span>Scroll</span>
+    </a>
+    <p class="hero__est">Est. {business.established}</p>
+  </div>
+</section>
+
+<script>
+  import { initHero } from '../scripts/hero-gl';
+  initHero();
+</script>
+
+<style>
+  .hero {
+    position: relative;
+    height: 100vh;
+    height: 100svh;
+    min-height: 620px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    overflow: hidden;
+    isolation: isolate;
+    background: #070707;
+    /* Geometry defaults; JS keeps these in sync with the WebGL composition */
+    --fx: 64%;
+    --fw: 0px;
+  }
+
+  .hero__media {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+  }
+
+  /* Ambient layer: the same room, out of focus, filling the screen */
+  .hero__ambient {
+    position: absolute;
+    inset: -8%;
+    overflow: hidden;
+  }
+  .hero__ambient img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 53% 46%;
+    filter: blur(38px) brightness(0.38) saturate(0.7);
+    transform: scale(1.15);
+  }
+
+  /* Sharp layer. Landscape: a tall frame to the right, feathered into the ambient layer. */
+  .hero__frame {
+    position: absolute;
+    top: 50%;
+    left: var(--fx);
+    height: 124%;
+    aspect-ratio: 816 / 1424;
+    transform: translate(-50%, -47%);
+    -webkit-mask-image:
+      linear-gradient(90deg, transparent 0%, #000 30%, #000 84%, transparent 100%),
+      linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(90deg, transparent 0%, #000 30%, #000 84%, transparent 100%),
+      linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+    mask-composite: intersect;
+  }
+  .hero__poster,
+  .hero__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .hero__video {
+    opacity: 0;
+    transition: opacity 1200ms var(--ease);
+  }
+  .hero.is-video .hero__video {
+    opacity: 1;
+  }
+  .hero:not(.reduced) .hero__frame {
+    animation: dolly 48s var(--ease-io) infinite alternate;
+  }
+  @keyframes dolly {
+    from {
+      transform: translate(-50%, -47%) scale(1);
+    }
+    to {
+      transform: translate(-50%, -47%) scale(1.06);
+    }
+  }
+
+  .hero__gl {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1600ms var(--ease);
+  }
+  .hero.is-gl .hero__gl {
+    opacity: 1;
+  }
+  .hero.is-gl .hero__frame,
+  .hero.is-gl .hero__ambient {
+    /* keep decoding the video, but let the canvas take over visually */
+    opacity: 0.001;
+    transition: opacity 1600ms var(--ease) 400ms;
+  }
+  .hero.is-gl .hero__grain {
+    display: none;
+  }
+
+  /* Legibility: left-side and bottom shade for the copy */
+  .hero__shade {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, rgba(7, 7, 7, 0.88) 0%, rgba(7, 7, 7, 0.55) 30%, rgba(7, 7, 7, 0) 58%),
+      linear-gradient(0deg, rgba(7, 7, 7, 0.92) 0%, rgba(7, 7, 7, 0.35) 22%, rgba(7, 7, 7, 0) 45%);
+  }
+  .hero__grain {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  @media (max-aspect-ratio: 1/1) {
+    /* Sign lifted to ~27% of the screen height (matches PORTRAIT_SIGN_Y in hero-gl.ts) */
+    .hero__frame {
+      top: auto;
+      left: 0;
+      right: 0;
+      bottom: auto;
+      inset-block-start: -19%;
+      width: 100%;
+      height: 100%;
+      aspect-ratio: auto;
+      transform: none;
+      -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 98%);
+      mask-image: linear-gradient(180deg, #000 80%, transparent 98%);
+    }
+    .hero__poster,
+    .hero__video {
+      object-position: 53% 50%;
+    }
+    .hero:not(.reduced) .hero__frame {
+      animation-name: dolly-portrait;
+    }
+    @keyframes dolly-portrait {
+      from {
+        transform: scale(1.02);
+      }
+      to {
+        transform: scale(1.08);
+      }
+    }
+    .hero__shade {
+      background:
+        linear-gradient(180deg, rgba(7, 7, 7, 0.55) 0%, rgba(7, 7, 7, 0) 18%),
+        linear-gradient(0deg, rgba(7, 7, 7, 0.97) 0%, rgba(7, 7, 7, 0.86) 30%, rgba(7, 7, 7, 0.3) 52%, rgba(7, 7, 7, 0) 66%);
+    }
+  }
+
+  /* ───────── Copy ───────── */
+  .hero__content {
+    position: relative;
+    padding-bottom: clamp(96px, 15vh, 160px);
+  }
+  .hero__copy {
+    max-width: min(640px, 48vw);
+    display: grid;
+    gap: 26px;
+    justify-items: start;
+  }
+  .hero__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px 8px 12px;
+    border: 1px solid rgba(241, 238, 232, 0.14);
+    background: rgba(10, 10, 10, 0.35);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-radius: 100px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--bone);
+  }
+  .hero__status-detail {
+    color: var(--mist);
+    font-weight: 500;
+  }
+  .hero__status-detail:not(:empty)::before {
+    content: '·';
+    margin-right: 10px;
+    color: var(--mist-2);
+  }
+  .hero__dot {
+    position: relative;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--mist);
+  }
+  :global([data-status].is-open) .hero__dot {
+    background: #9fc39a;
+    box-shadow: 0 0 0 0 rgba(159, 195, 154, 0.5);
+    animation: pulse 2.6s var(--ease) infinite;
+  }
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(159, 195, 154, 0.45);
+    }
+    70% {
+      box-shadow: 0 0 0 9px rgba(159, 195, 154, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(159, 195, 154, 0);
+    }
+  }
+
+  .hero__title {
+    font-size: clamp(3.4rem, 1.6rem + 6.2vw, 8.4rem);
+    line-height: 0.92;
+    letter-spacing: -0.02em;
+    margin-top: -4px;
+  }
+  .hero__title em {
+    padding-right: 0.08em;
+  }
+  .hero__lede {
+    max-width: 30em;
+    font-size: var(--step-1);
+    line-height: 1.6;
+    color: var(--bone-2);
+  }
+  .hero__ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 6px;
+  }
+
+  /* ───────── Bottom strip ───────── */
+  .hero__strip {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding-block: 22px calc(22px + env(safe-area-inset-bottom, 0px));
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--mist);
+  }
+  .hero__strip::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: max(var(--gutter), env(safe-area-inset-left, 0px));
+    right: max(var(--gutter), env(safe-area-inset-right, 0px));
+    height: 1px;
+    background: linear-gradient(90deg, rgba(241, 238, 232, 0.16), rgba(241, 238, 232, 0.06) 60%, rgba(198, 161, 91, 0.3));
+  }
+  .hero__loc {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    justify-self: start;
+    transition: color var(--t-sm) var(--ease);
+  }
+  .hero__loc:hover {
+    color: var(--bone);
+  }
+  .hero__loc :global(svg) {
+    width: 15px;
+    height: 15px;
+    color: var(--gold);
+  }
+  .hero__scroll {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    color: var(--bone-2);
+  }
+  .hero__scroll-line {
+    position: relative;
+    width: 1px;
+    height: 34px;
+    overflow: hidden;
+    background: rgba(241, 238, 232, 0.16);
+  }
+  .hero__scroll-line::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--champagne);
+    transform: translateY(-100%);
+    animation: scrollcue 2.8s var(--ease-io) infinite;
+  }
+  @keyframes scrollcue {
+    0% {
+      transform: translateY(-100%);
+    }
+    55% {
+      transform: translateY(0);
+    }
+    100% {
+      transform: translateY(100%);
+    }
+  }
+  .hero__est {
+    justify-self: end;
+    color: var(--champagne);
+  }
+
+  @media (max-width: 1080px) {
+    .hero__copy {
+      max-width: min(600px, 62vw);
+    }
+  }
+
+  @media (max-aspect-ratio: 1/1) {
+    .hero__content {
+      padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    }
+    .hero__copy {
+      max-width: 640px;
+      gap: 20px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .hero {
+      min-height: 600px;
+    }
+    .hero__copy {
+      gap: 18px;
+    }
+    .hero__title {
+      font-size: clamp(3.3rem, 15.5vw, 4.6rem);
+    }
+    .hero__lede {
+      font-size: 1rem;
+      max-width: 26em;
+    }
+    .hero__ctas {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      width: 100%;
+      gap: 10px;
+    }
+    .hero__ctas .btn {
+      --btn-pad-x: 12px;
+      font-size: 0.66rem;
+      letter-spacing: 0.16em;
+      gap: 9px;
+    }
+    .hero__strip {
+      grid-template-columns: 1fr auto;
+      padding-block: 16px calc(16px + env(safe-area-inset-bottom, 0px));
+      font-size: 0.62rem;
+      letter-spacing: 0.16em;
+    }
+    .hero__scroll {
+      display: none;
+    }
+  }
+
+  @media (max-height: 700px) and (min-aspect-ratio: 1/1) {
+    .hero__title {
+      font-size: clamp(3rem, 9vh, 6rem);
+    }
+    .hero__copy {
+      gap: 18px;
+    }
+    .hero__content {
+      padding-bottom: 92px;
+    }
+  }
+</style>

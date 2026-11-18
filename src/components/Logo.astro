@@ -1,0 +1,47 @@
+---
+/**
+ * One Cut script wordmark, vector-traced from the illuminated sign in the shop.
+ * Inherits color from `currentColor`, or uses the metallic gold gradient with `gold`.
+ */
+import pathData from '../assets/logo-path.txt?raw';
+
+interface Props {
+  class?: string;
+  gold?: boolean;
+  title?: string;
+}
+const { class: className, gold = false, title = 'One Cut' } = Astro.props;
+const gid = `ocg-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+<svg
+  class:list={['logo', className]}
+  viewBox="259 37 1615 500"
+  role="img"
+  aria-label={title}
+  xmlns="http://www.w3.org/2000/svg"
+>
+  {
+    gold && (
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="1" y2="0.35">
+          <stop offset="0" stop-color="#9a7738" />
+          <stop offset="0.25" stop-color="#e2cc97" />
+          <stop offset="0.42" stop-color="#f6e9c4" />
+          <stop offset="0.6" stop-color="#c6a15b" />
+          <stop offset="0.8" stop-color="#ead5a2" />
+          <stop offset="1" stop-color="#a07d3d" />
+        </linearGradient>
+      </defs>
+    )
+  }
+  <path d={pathData.trim()} fill={gold ? `url(#${gid})` : 'currentColor'} fill-rule="evenodd"></path>
+</svg>
+
+<style>
+  .logo {
+    width: auto;
+    height: 1em;
+    overflow: visible;
+  }
+</style>
